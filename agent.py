@@ -4,6 +4,9 @@ from langchain.tools import Tool
 from llm import llm
 from langchain.chains.conversation.memory import ConversationBufferWindowMemory
 from langchain.prompts import PromptTemplate
+from tools.vector import kg_qa
+from tools.cypher import cypher_qa
+
 
 memory = ConversationBufferWindowMemory(
     memory_key='chat_history',
@@ -16,8 +19,17 @@ tools = [
         name="General Chat",
         description="For general chat not covered by other tools",
         func=llm.invoke,
-        return_direct=True
-    )
+    ),
+    Tool.from_function(
+        name="Vector Search Index", 
+        description="Provides information about movie plots using Vector Search", 
+        func = kg_qa, 
+    ),
+    Tool.from_function(
+        name="Graph Cypher QA Chain",  # (1)
+        description="Provides information about Movies including their Actors, Directors and User reviews", # (2)
+        func = cypher_qa, # (3)
+    ),
 ]
 
 agent_prompt = PromptTemplate.from_template("""
@@ -72,7 +84,6 @@ def generate_response(prompt):
     Create a handler that calls the Conversational agent
     and returns a response to be rendered in the UI
     """
-
     response = agent_executor.invoke({"input": prompt})
 
     return response['output']
